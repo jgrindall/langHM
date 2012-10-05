@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<lesson name="Yeknom Island Division" ID="vl979class2_sharingstory" type="story">
+<component header="Story">
+<file path="story.swf" controlstype="slider" sound="streaming"/>
+</component>
+<component header="Summary">
+<file path="summary.swf" controlstype="pages" sound="not streaming"/>
+</component>
+<component header="Activity">
+<file path="activity.swf" controlstype="pages" sound="none"/>
+<file path="story.swf" controlstype="slider" sound="streaming"/>
+<file path="story.swf" controlstype="slider" sound="streaming"/>
+</component>
+<component header="Questions">
+<file path="pqs.swf" controlstype="qa" sound="none"/>
+</component>
+<component header="Game">
+<file path="dog.swf" controlstype="none" sound="none"/>
+</component>
+<component header="Quiz">
+<file path="quiz.swf" controlstype="pages" sound="none"/>
+</component></lesson>
+
