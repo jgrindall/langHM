@@ -31,7 +31,6 @@
             EventSingleton.getInstance().addEventListener(LangEvent.FONT_SIZE_CHANGED, this.onFontSizeChange);
             EventSingleton.getInstance().addEventListener(LangEvent.SAVE_NEW, this.onSave);
             EventSingleton.getInstance().addEventListener(LangEvent.SAVE_NEW_COMPLETE, this.onSaveComplete);
-            new FontManager();
             this.onDisplayChange(null);
             return;
         }

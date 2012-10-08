@@ -13,6 +13,17 @@ package com.heymath.jsfl.trans{
 		public static function getRightToLeft(lang:String):Boolean{
 			return (lang==Languages.HEBREW);
 		}
+		public static function getFontName(lang:String):String{
+			if(lang==HINDI){
+				return new KrutiClass().fontName;
+			}
+			else if(lang==FRENCH){
+				return new CaitlynClass().fontName;
+			}
+			else {
+				return new ArialClass().fontName;
+			}
+		}
 		
 	}
 }

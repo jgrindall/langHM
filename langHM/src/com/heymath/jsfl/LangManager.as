@@ -83,7 +83,7 @@
             loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.onSwfLoaded);
             loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.onSwfFail);
             loader.contentLoaderInfo.addEventListener(SecurityErrorEvent.SECURITY_ERROR, this.onSwfFail);
-            loader.load(new URLRequest(this._options.loadSwf));
+            loader.load(new URLRequest(this._options.loadLesson));
             return;
         }
 

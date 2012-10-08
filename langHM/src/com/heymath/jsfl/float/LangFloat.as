@@ -5,8 +5,10 @@
     import com.heymath.jsfl.model.*;
     import com.heymath.jsfl.trans.*;
     import com.heymath.jsfl.utils.*;
+    
     import flash.display.*;
     import flash.events.*;
+    import flash.geom.Rectangle;
     
 
     public class LangFloat extends Object
@@ -36,7 +38,7 @@
                 m = this._mc[i] as MovieClip;
                 float = m.float as TextComponent;
                 s = TransSingleton.getInstance().translate(LangUtils.getText(m));
-                float.setText(s, Languages.getRightToLeft(LangModelSingleton.getInstance().getLang()));
+                float.setText(s, Languages.getRightToLeft(LangModelSingleton.getInstance().getLang()), Languages.getFontName(LangModelSingleton.getInstance().getLang()));
                 i++;
             }
             return;
@@ -45,19 +47,17 @@
         public function register(m:MovieClip, data:Object) : void
         {
             this._mc.push(m);
-            var text:TextComponent = new TextComponent();
-            text.x = data.gapx;
-            text.y = data.gapy;
-            text.width = data.bounds.width;
-            text.height = data.bounds.height;
-            LangUtils.addTranslatedText(text, m);
+            var float:TextComponent = new TextComponent();
+            float.setSize(new Rectangle(data.gapx, data.gapy, data.bounds.width, data.bounds.height));
+            var s:String = TransSingleton.getInstance().translate(LangUtils.getText(m));
+            float.setText(s, Languages.getRightToLeft(LangModelSingleton.getInstance().getLang()), Languages.getFontName(LangModelSingleton.getInstance().getLang()));
             var vis:Boolean = LangModelSingleton.getInstance().getDisplay();
             LangUtils.getOrigTextField(m).visible = !vis;
-            text.visible = vis;
-            m.addChild(text);
-            m.float = text;
-            text.setParent(m);
-            text.addEventListener(MouseEvent.CLICK, this.onClick);
+            float.visible = vis;
+            m.addChild(float);
+            m.float = float;
+            float.setParent(m);
+            //text.addEventListener(MouseEvent.CLICK, this.onClick);
             return;
         }
 

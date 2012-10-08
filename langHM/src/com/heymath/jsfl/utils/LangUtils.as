@@ -16,17 +16,6 @@
             return;
         }
 		
-        public static function addTranslatedText(t:TextField, m:MovieClip) : void
-        {
-            var s:String = TransSingleton.getInstance().translate(LangUtils.getText(m));
-            if (s)
-            {
-                t.text = s;
-            }
-            EventSingleton.getInstance().dispatchEvent(new LangEvent(LangEvent.DEBUG,true,true,{"message":"set as "+s}));
-            return;
-        }
-
         public static function getText(m:MovieClip) : String
         {
             var s:StaticText = LangUtils.getOrigTextField(m);

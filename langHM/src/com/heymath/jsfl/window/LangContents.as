@@ -48,7 +48,8 @@
 
         private function doTranslate(m:MovieClip) : void
         {
-            LangUtils.addTranslatedText(this._text, m);
+            var s:String = TransSingleton.getInstance().translate(LangUtils.getText(m));
+            this._text.text = s;
             return;
         }
 
