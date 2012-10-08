@@ -5,6 +5,12 @@ html-template
 *.swc
 
 *.svn
+
 svn
+
 *.swf
+
 swf
+
+*~*
+
