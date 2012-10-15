@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<lesson name="Addition on the Number Line - up to 10" ID="vl1006class1_addnumlineten" type="lesson">
+<component header="Introduction">
+<file path="introduction.swf" type="lesson" controlstype="slider" sound="streaming"/>
+</component>
+<component header="Activity">
+<file path="activity.swf" type="activity" controlstype="none" sound="streaming"/>
+</component>
+</lesson>

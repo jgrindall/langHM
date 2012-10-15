@@ -1,0 +1,6 @@
+when i click on yes test me! the audio "can you remember what happened" can stop - need to check with 2nd qc....done
+
+Can you remember what happened - extra movement of mouth at the begining and at the end....done
+
+when i click on the stars, the intro audio stops. make it play.
+...done

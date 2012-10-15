@@ -1,0 +1,10 @@
+<lesson name="Ordinal Numbers" ID="vl1002class1_ordinalnumbers" type="activity">
+
+<component header="Animation">
+<file path="animation.swf" type="lesson" controlstype="slider" sound="streaming"/>
+</component>
+
+<component header="Activity">
+<file path="activity.swf" type="activity" controlstype="none" sound="not streaming"/>
+</component>
+</lesson>

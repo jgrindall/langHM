@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<lesson name="Repeated Addition on the Number Line" ID="vl1005class2_repaddnumline" type="lesson">
+<component header="Introduction">
+<file path="introduction.swf" type="lesson" controlstype="slider" sound="streaming"/>
+</component>
+<component header="Activity">
+<file path="activity.swf" type="activity" controlstype="none" sound="not streaming"/>
+</component>
+</lesson>
