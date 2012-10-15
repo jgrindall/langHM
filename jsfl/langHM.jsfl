@@ -8,29 +8,14 @@ com.heymath.jsfl = {};
 com.heymath.jsfl.lang = function(){};
 var Lang = com.heymath.jsfl.lang;
 
-
 Lang.Config = { };
 Lang.Config.IMPORT_STRING = "import com.heymath.jsfl.lib.*;";
 Lang.Config.SWC_PATH = "../../../../langHMLib/langHMLib.swc";
 
+Lang.Errors = {};
+Lang.Errors.SELECT_FAIL = "Selecting the library item failed";
+
 Lang.num = 0;
-
-Lang.Utils = { };
-
-Lang.Utils.copyLibArray = function(){
-	var items = Lang.lib.items;
-	var len = items.length;
-	var copyItems = [];
-	var i;
-	for(i=0;i<=len-1;i++){
-		var item = items[i];
-		if(Lang.getDoProcess(item)){
-			copyItems.push(item);
-		}
-	}
-	return copyItems;
-};
-
 
 Lang.init = function(){
 	var docs = fl.documents;  
@@ -58,11 +43,18 @@ Lang.getProcessCode = function(name, x, y, w, h){
 };
 
 Lang.processTextField = function(text, addCode){
-	var newName = "HMTtranslate_" +Lang.num;
+	var newName;
+	if(addCode){
+		newName = "HMTrans_" +Lang.num;
+	}
+	else{
+		newName = "HMTransStage_" +Lang.num;
+	}
 	Lang.num = Lang.num + 1;
 	Lang.dom.selectNone();
 	Lang.dom.selection = [text];
-	try{
+	var len = Lang.dom.selection.length;
+	if(len == 1){
 		Lang.dom.convertToSymbol("movie clip", newName, "top left");
 		if(addCode){
 			var libItem = Lang.getLibItemByName(newName);
@@ -74,40 +66,75 @@ Lang.processTextField = function(text, addCode){
 		}
 		Lang.textFields.push(text);
 	}
-	catch(e){
-		alert("error "+text+","+newName);
+	else{
+		throw new Error(Lang.Errors.SELECT_FAIL);
 	}
 };
 
+Lang.breakAll = function(frame){
+	var k;
+	var el;
+	var type;
+	var els;
+	var len;
+	var needsBreak = true;
+	while(needsBreak){
+		//alert("loop");
+		needsBreak = false;
+		els = frame.elements; 
+		len = els.length;
+		for( k = 0; k<=len - 1; k++){
+			el = els[k];
+			type = el.elementType;
+			if(type=="shape" && el.isGroup){
+				needsBreak = true;
+				Lang.dom.selectNone();
+				Lang.dom.selection = [el];
+				//alert("going to break");
+				Lang.dom.breakApart();
+			}
+		}
+	}
+	
+};
 
 Lang.processFrame=function(timeline, frame, addCode){
+	var k;
+	var el;
+	var type;
 	var els = frame.elements; 
-	for(var k=0;k<=els.length-1;k++){
-		var el = els[k];
-		if(el.elementType=="text" && Lang.textFields.indexOf(el)==-1 && el.textType=="static" ){
+	var len = els.length;
+	els = frame.elements; 
+	len = els.length;
+	for( k = 0; k<=len - 1; k++){
+		el = els[k];
+		type = el.elementType;
+		if(type=="text" && el.textType=="static" && Lang.textFields.indexOf(el)==-1  ){
+			//alert("ptf "+addCode);
 			Lang.processTextField(el, addCode);
 		}
 	}
 };
 
-
 Lang.processLayer = function(timeline, layer, addCode){
 	var type = layer.layerType;
 	if(type=="normal" || type=="guided" || type=="masked"){
 		layer.locked = false;
+		layer.visible = true;
 		var frameCount = layer.frameCount;
 		for(var j=0;j<=frameCount-1;j++){
 			var frame = layer.frames[j];
 			if(frame.startFrame == j){
 				// it is a keyframe
 				timeline.setSelectedFrames(j, j);
+				//alert("frame "+j);
+				Lang.breakAll(frame);
+				//alert("broken");
 				Lang.processFrame(timeline, frame, addCode);
 			}
 		}
 	}
 };
-
-
 
 Lang.scanTimeline = function(timeline, addCode){
 	if(!timeline){
@@ -116,9 +143,11 @@ Lang.scanTimeline = function(timeline, addCode){
 	for(var i=0;i<=timeline.layerCount-1;i++){
 		timeline.setSelectedLayers(i);
 		var layer = timeline.layers[i];
+		//alert("layer "+i);
 		Lang.processLayer(timeline, layer, addCode);
 	}
 };
+
 Lang.checkType = function(item){
 	var itemType = item.itemType;
 	if(itemType && (itemType=="movie clip" || itemType=="graphic") ){
@@ -126,6 +155,7 @@ Lang.checkType = function(item){
 	}
 	return false;
 };
+
 Lang.checkName = function(item){
 	var itemName = item.name;
 	if(itemName.substr(0,16)=="Component Assets" ){
@@ -133,6 +163,7 @@ Lang.checkName = function(item){
 	}
 	return true;
 };
+
 Lang.checkLink = function(item){
 	var ex = item.linkageExportForAS;
 	if(!ex){
@@ -154,33 +185,36 @@ Lang.checkLink = function(item){
 	}
 	return true;
 };
+
 Lang.getDoProcess = function(item){
 	return Lang.checkType(item) && Lang.checkName(item) && Lang.checkLink(item);
 };
 
 Lang.searchLib = function(){
-	var copyItems = Lang.Utils.copyLibArray();
-	var len = copyItems.length;
-	fl.trace("items "+len);
-	var item;
-	for(var i=0;i<=len-1;i++){
-		item = copyItems[i];
-		fl.trace(item.name);
-		Lang.lib.selectItem(item.name, true);
-		Lang.lib.editItem(item.name);
-		var itemTimeline = item.timeline;
-		Lang.scanTimeline(itemTimeline, true);
-		Lang.dom.exitEditMode();
+	var items = Lang.lib.items;
+	var len = items.length;
+	var i;
+	for(i=0;i<=len-1;i++){
+		var item = items[i];
+		Lang.lib.selectNone();
+		var s = item.name;
+		if(s.substring(0,8)!="HMTrans_" && Lang.getDoProcess(item)){
+			fl.trace(i+", "+s);
+			Lang.lib.selectItem(item.name, true);
+			Lang.lib.editItem(s);
+			//alert("edit "+s);
+			var itemTimeline = item.timeline;
+			Lang.scanTimeline(itemTimeline, true);
+			Lang.dom.exitEditMode();
+		}
 	}
 };
-
 
 Lang.getDoc = function(){
 	var docs = fl.documents;
 	var doc = docs[0];
 	return doc;
 };
-
 
 Lang.saveAndPublish = function(){
 	var doc = Lang.getDoc();
@@ -192,42 +226,21 @@ Lang.saveAndPublish = function(){
 	doc = Lang.getDoc();
 	doc.publish();
 };
+
 Lang.updateSrc = function(){
 	var doc = Lang.getDoc();
-	//doc.sourcePath = doc.sourcePath+";"+Lang.Config.AS_PATH;
 	doc.libraryPath = doc.libraryPath+";"+Lang.Config.SWC_PATH;
 };
 
-Lang.insertBlank = function(){
-	for(var i=0;i<=Lang.mainTimeline.layerCount-1;i++){
-		var layer = Lang.mainTimeline.layers[i];
-		var s = "";
-		if(layer.frameCount>=1){
-			s = layer.frames[0].actionScript;
-			layer.frames[0].actionScript="";
-		}
-		
-		Lang.mainTimeline.setSelectedLayers(i);
-		Lang.mainTimeline.setSelectedFrames(0,0);
-		Lang.mainTimeline.insertKeyframe(1);
-		Lang.mainTimeline.cutFrames(0,0);
-		Lang.mainTimeline.pasteFrames(1,1);
-		layer.frames[0].actionScript=s;
-		
-	}
-};
-
 Lang.processAll = function(){
-	//Lang.insertBlank();
-	fl.trace("frame added");
+	Lang.dom.selectNone();
 	Lang.scanTimeline(Lang.mainTimeline, false);
+	Lang.dom.selectNone();
 	fl.trace("main timeline processed");
 	Lang.searchLib();
-	fl.trace("library scanned");
-	Lang.updateSrc();
-	Lang.saveAndPublish();
+	//Lang.updateSrc();
+	//Lang.saveAndPublish();
 };
-
 
 if(Lang.init()){
 	Lang.processAll();
