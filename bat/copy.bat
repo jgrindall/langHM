@@ -104,8 +104,6 @@ for /f %%d in ('dir "%deploy%\*_LANG.swf" /b') do (
 
 REM  *********** CLEAN UP *******************
 
-copy "%jsfl%" %root%\jsfl\langHM.jsfl
-
 cd %deploy%
 
 del /q /s *.fla *.zip *.mp3 *.flv *.pdf *.doc *.xls *.gif *.as *.jpg *.jpeg *.png
