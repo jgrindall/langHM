@@ -1,173 +1,106 @@
-﻿// turn off script timeout
+﻿
+//****  INIT  ****//
 fl.showIdleMessage(false);
+var url = fl.configURI + "Javascript/ObjectFindAndSelect.jsfl";
+if( fl.findObjectInDocByType == null ){
+	fl.runScript(url);
+}
+xjsfl.init(this);
+clear();
 
-// global namespace and shortcut
-var com = {};
-com.heymath = {};
-com.heymath.jsfl = {};
-com.heymath.jsfl.lang = function(){};
-var Lang = com.heymath.jsfl.lang;
+var Lang = {};
+Lang.dom = null;
+Lang.groupArray = [];
+Lang.textArray = [];
+Lang.context = null;
+Lang.IMPORT_STRING = "import com.heymath.jsfl.lib.*;";
+Lang.SWC_PATH = "../../../../langHMLib/langHMLib.swc";
+Lang.ROOT = "file:///c|/users/john/documents/heymath/work/jsfl/jsfl/";
+Lang.LESSONS_ROOT = "file:///c|/users/john/documents/heymath/work/jsfl/";
+Lang.CONFIG_FILE = Lang.ROOT+"fileList.txt";
+Lang.LOG_FILE = Lang.ROOT+"compile_log.txt";
+Lang.started = false;
+Lang.DEBUG = false;
+//****  END INIT  ****//
 
-Lang.Config = { };
-Lang.Config.IMPORT_STRING = "import com.heymath.jsfl.lib.*;";
-Lang.Config.SWC_PATH = "../../../../langHMLib/langHMLib.swc";
 
-Lang.Errors = {};
-Lang.Errors.SELECT_FAIL = "Selecting the library item failed";
 
-Lang.num = 0;
-
-Lang.init = function(){
-	var docs = fl.documents;  
-	if(docs.length!=1){
-		alert("error, please open one doc");
-		return false;
-	}
-	else{
-		Lang.dom = fl.getDocumentDOM();
-		Lang.dom.selectNone();
-		Lang.lib = Lang.dom.library;
-		Lang.mainTimeline = Lang.dom.getTimeline();
-		Lang.textFields = [ ];
-		return true;
-	}
-};
-
-Lang.getLibItemByName = function(name){
-	return Lang.lib.items[Lang.lib.findItemIndex(name)];
-};
-
-Lang.getProcessCode = function(name, x, y, w, h){
-	var s = "new FlashLang(this, '"+name+"', new Rectangle("+Math.round(x)+","+Math.round(y)+","+Math.round(w)+","+Math.round(h)+"));";
-	return Lang.Config.IMPORT_STRING+"\n"+s;
-};
-
-Lang.processTextField = function(text, addCode){
-	var newName;
-	if(addCode){
-		newName = "HMTrans_" +Lang.num;
-	}
-	else{
-		newName = "HMTransStage_" +Lang.num;
-	}
-	Lang.num = Lang.num + 1;
-	Lang.dom.selectNone();
-	Lang.dom.selection = [text];
-	var len = Lang.dom.selection.length;
-	if(len == 1){
-		Lang.dom.convertToSymbol("movie clip", newName, "top left");
-		if(addCode){
-			var libItem = Lang.getLibItemByName(newName);
-			var libTimeline = libItem.timeline;
-			var newLayer = libTimeline.addNewLayer();
-			libTimeline.setSelectedLayers(0);
-			var s = Lang.getProcessCode(newName, text.x, text.y, text.width, text.height);
-			libTimeline.layers[newLayer].frames[0].actionScript = s;
-		}
-		Lang.textFields.push(text);
-	}
-	else{
-		throw new Error(Lang.Errors.SELECT_FAIL);
-	}
-};
-
-Lang.breakAll = function(frame){
-	var k;
-	var el;
-	var type;
-	var els;
-	var len;
-	var needsBreak = true;
-	while(needsBreak){
-		//alert("loop");
-		needsBreak = false;
-		els = frame.elements; 
-		len = els.length;
-		for( k = 0; k<=len - 1; k++){
-			el = els[k];
-			type = el.elementType;
-			if(type=="shape" && el.isGroup){
-				needsBreak = true;
-				Lang.dom.selectNone();
-				Lang.dom.selection = [el];
-				//alert("going to break");
-				Lang.dom.breakApart();
-			}
-		}
+function exitEdit(sel){
+	//Lang.context.goto();
+	//return;
+	
+	while (sel && sel.parent != undefined){
+		sel = sel.parent;
+		Lang.dom.exitEditMode();
 	}
 	
-};
+}
 
-Lang.processFrame=function(timeline, frame, addCode){
-	var k;
-	var el;
-	var type;
-	var els = frame.elements; 
-	var len = els.length;
-	els = frame.elements; 
-	len = els.length;
-	for( k = 0; k<=len - 1; k++){
-		el = els[k];
-		type = el.elementType;
-		if(type=="text" && el.textType=="static" && Lang.textFields.indexOf(el)==-1  ){
-			//alert("ptf "+addCode);
-			Lang.processTextField(el, addCode);
+function addTempLayer(){
+	appendLog("add temporary layer");
+	var timeline = Lang.dom.getTimeline();
+	timeline.setSelectedLayers(0, true);
+	timeline.addNewLayer("temp");
+	timeline.setSelectedLayers(0, true);
+}
+
+function distributeAll(){
+	appendLog("distributeAll");
+	var inArray = fl.findObjectInDocByType("instance", Lang.dom);
+	var len = inArray.length;
+	for (var i = 0; i <= len - 1 ; i++) {
+		var sel = inArray[i];
+		fl.selectElement(sel, true);
+		var timeline = Lang.dom.getTimeline();
+		var fc = timeline.frameCount;
+		var lc = timeline.layerCount; 
+		if(lc===1 && fc===1){
+			Lang.dom.selectAll();
+			Lang.dom.distributeToLayers();
 		}
+		Lang.dom.exitEditMode();
+		exitEdit(sel);
+		appendLog("exited");
 	}
-};
+}
 
-Lang.processLayer = function(timeline, layer, addCode){
-	var type = layer.layerType;
-	if(type=="normal" || type=="guided" || type=="masked"){
-		layer.locked = false;
-		layer.visible = true;
-		var frameCount = layer.frameCount;
-		for(var j=0;j<=frameCount-1;j++){
-			var frame = layer.frames[j];
-			if(frame.startFrame == j){
-				// it is a keyframe
-				timeline.setSelectedFrames(j, j);
-				//alert("frame "+j);
-				Lang.breakAll(frame);
-				//alert("broken");
-				Lang.processFrame(timeline, frame, addCode);
+function breakGroups(){
+	var n = 0;
+	appendLog("break all groups");
+	var errors = false;
+	var sel, layer, obj, i, len;
+	getGroups();
+	while(!errors && Lang.groupArray.length>=1){
+		len = Lang.groupArray.length;
+		appendLog("break "+len+" groups");
+		appendLog("first, distribute!");
+		distributeAll();
+		for (i = 0; i <= len - 1; i++) {
+			sel = Lang.groupArray[i];
+			obj = sel.obj;
+			fl.selectElement(sel, false);
+			if(Lang.dom.selection.length===1){
+				// sometimes selection fails
+				appendLog("going to break "+obj.name);
+				Lang.dom.unGroup();
+				appendLog("broken "+n);
+				n++;
 			}
+			else{
+				appendLog("error selecting group");
+				errors = true;
+				break;
+			}
+			exitEdit(sel);
 		}
+		getGroups();
 	}
-};
+}
 
-Lang.scanTimeline = function(timeline, addCode){
-	if(!timeline){
-		return;
-	}
-	for(var i=0;i<=timeline.layerCount-1;i++){
-		timeline.setSelectedLayers(i);
-		var layer = timeline.layers[i];
-		//alert("layer "+i);
-		Lang.processLayer(timeline, layer, addCode);
-	}
-};
-
-Lang.checkType = function(item){
-	var itemType = item.itemType;
-	if(itemType && (itemType=="movie clip" || itemType=="graphic") ){
-		return true;
-	}
-	return false;
-};
-
-Lang.checkName = function(item){
-	var itemName = item.name;
-	if(itemName.substr(0,16)=="Component Assets" ){
-		return false;
-	}
-	return true;
-};
-
-Lang.checkLink = function(item){
+function filterLib(item){
 	var ex = item.linkageExportForAS;
 	if(!ex){
-		return true;
+		return false;
 	}
 	var itemBase = item.linkageBaseClass;
 	var itemLink = item.linkageClassName;
@@ -184,65 +117,175 @@ Lang.checkLink = function(item){
 		}
 	}
 	return true;
-};
+}
 
-Lang.getDoProcess = function(item){
-	return Lang.checkType(item) && Lang.checkName(item) && Lang.checkLink(item);
-};
+function addLibToStage(){
+	appendLog("add all library items to stage");
+	$$(':graphic').filter(filterLib).addToStage();
+	$$(':movieclip').filter(filterLib).addToStage();
+}
 
-Lang.searchLib = function(){
-	var items = Lang.lib.items;
-	var len = items.length;
-	var i;
-	for(i=0;i<=len-1;i++){
-		var item = items[i];
-		Lang.lib.selectNone();
-		var s = item.name;
-		if(s.substring(0,8)!="HMTrans_" && Lang.getDoProcess(item)){
-			fl.trace(i+", "+s);
-			Lang.lib.selectItem(item.name, true);
-			Lang.lib.editItem(s);
-			//alert("edit "+s);
-			var itemTimeline = item.timeline;
-			Lang.scanTimeline(itemTimeline, true);
-			Lang.dom.exitEditMode();
+function getGroups(){
+	Lang.groupArray = [];
+	var shapeArray = fl.findObjectInDocByType("shape", Lang.dom);
+	var len = shapeArray.length;
+	for (var i = 0; i <= len - 1; i++) {
+		var sel = shapeArray[i];
+		var s = sel.obj;
+		if(s.isGroup){
+			Lang.groupArray.push(sel);
 		}
 	}
-};
+}
 
-Lang.getDoc = function(){
-	var docs = fl.documents;
-	var doc = docs[0];
-	return doc;
-};
+function convertText(){
+	appendLog("convert all text fields");
+	var sel;
+	var textArray = fl.findObjectInDocByType("text", Lang.dom);
+	var len = textArray.length;
+	var num = 0;
+	for (var i = 0; i <= len - 1; i++) {
+		sel = textArray[i];
+		var textField = sel.obj;
+		if(textField.textType=="static"){
+			num++;
+			fl.selectElement(sel, false);
+			if(Lang.dom.selection.length===1){
+				Lang.dom.convertToSymbol("movie clip", "HMTRANS"+Lang.num, "top left");
+				Lang.num++;
+			}
+		}
+		exitEdit(sel);
+	}
+	appendLog("converted "+num+" static textfields");
+}
 
-Lang.saveAndPublish = function(){
-	var doc = Lang.getDoc();
+function removeLayer(){
+	appendLog("remove temporary layer");
+	var timeline = Lang.dom.getTimeline();
+	timeline.deleteLayer(0);
+}
+
+function addCode(){
+	appendLog("add code to textfields");
+	Iterators.items(true, itemCallback);
+}
+
+function unlockAllLayers(){
+	appendLog("unlock all layers");
+	Iterators.layers(true, unlockLayer);
+	Iterators.items(true, null, unlockLayer);
+}
+
+function itemCallback(item, index, items, context){
+	if(item.name.substr(0,7)=="HMTRANS"){
+		appendLog("add code to "+item.name);
+		var libTimeline = item.timeline;
+		var newLayer = libTimeline.addNewLayer();
+		libTimeline.setSelectedLayers(0);
+		var s = getProcessCode(item.name);
+		libTimeline.layers[newLayer].frames[0].actionScript = s;
+	}
+}
+
+function unlockLayer(layer, index, layers, context){
+	layer.locked=false;
+	layer.visible=true;
+}
+
+function getProcessCode(name){
+	var nameString = "'"+name+"'";
+	var s = "new FlashLang(this, "+nameString+");";
+	return Lang.IMPORT_STRING+"\n"+s;
+}
+
+function loadFiles(){
+	var i, file, fileList, fileListArray, c10, c13, processList;
+	c10 = String.fromCharCode(10);
+	c13 = String.fromCharCode(13);
+	appendLog("load "+Lang.CONFIG_FILE);
+	fileList = FLfile.read(Lang.CONFIG_FILE);
+	fileList = fileList.split(c10).join(c13).split(c13+c13).join(c13);
+	fileListArray = fileList.split(c13);
+	var filesToProcess = [];
+	for(i=0;i<=fileListArray.length-1;i++){
+		file = fileListArray[i];
+		if(file.length>=5 && file.substr(0,1)!=="#" && file.substr(file.length-4)===".fla"){
+			filesToProcess.push(file);
+		}
+	}
+	appendLog("loaded "+filesToProcess.length+" files  ");
+	for(i=0;i<=filesToProcess.length-1;i++){
+		file = filesToProcess[i];
+		openFile(Lang.LESSONS_ROOT+file);
+	}
+}
+
+function appendLog (p) {
+	p="DEBUG:\t" + (new Date()) + "\t\t"+p;
+	if(!Lang.started){
+		FLfile.write(Lang.LOG_FILE,p);
+		Lang.started = true;
+	}
+	else{
+		FLfile.write(Lang.LOG_FILE,"\n"+p,"append");
+	}
+	if(Lang.DEBUG){
+		alert(p);
+	}
+}
+
+function openFile(file){
+	Lang.num = 0;
+	if(fl.documents.length>=1){
+		appendLog("aborting, a flash document is open");
+		return;
+	}
+	else{
+		fl.openDocument(file);
+		appendLog("process "+file);
+		Lang.dom = $dom;
+		Lang.num = 0;
+		Lang.context = Context.create();
+		processFile();
+		//fl.closeDocument(fl.documents[0]);
+		appendLog("closing...\n------------------------------------\n");
+	}
+}
+
+function saveAndPublish(){
+	appendLog("saving");
+	var doc = fl.documents[0];
 	var docURI= doc.pathURI;
 	var appendName = "_LANG.fla";
 	docURI = docURI.replace(".fla",appendName);
-	fl.saveDocument(doc ,docURI);
-	fl.openDocument(docURI);
-	doc = Lang.getDoc();
+	fl.saveDocument(doc, docURI);
+	var doc = fl.documents[0];
 	doc.publish();
-};
-
-Lang.updateSrc = function(){
-	var doc = Lang.getDoc();
-	doc.libraryPath = doc.libraryPath+";"+Lang.Config.SWC_PATH;
-};
-
-Lang.processAll = function(){
-	Lang.dom.selectNone();
-	Lang.scanTimeline(Lang.mainTimeline, false);
-	Lang.dom.selectNone();
-	fl.trace("main timeline processed");
-	Lang.searchLib();
-	//Lang.updateSrc();
-	//Lang.saveAndPublish();
-};
-
-if(Lang.init()){
-	Lang.processAll();
 }
+
+function updateSrc (){
+	appendLog("update src");
+	var doc = fl.documents[0];
+	doc.libraryPath = doc.libraryPath+";"+Lang.SWC_PATH;
+}
+
+
+function processFile(){
+	addTempLayer();
+	addLibToStage();
+	unlockAllLayers();
+	distributeAll();
+	breakGroups();
+	convertText();
+	removeLayer();
+	addCode();
+	updateSrc();
+	saveAndPublish();
+}
+
+
+loadFiles();
+fl.quit();
+
 
