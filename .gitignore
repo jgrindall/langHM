@@ -14,3 +14,8 @@ swf
 
 *~*
 
+*.zip
+*.flv
+
+jsfl/compile_log.txt
+
