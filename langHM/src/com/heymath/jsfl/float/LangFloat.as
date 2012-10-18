@@ -48,7 +48,7 @@
         {
             this._mc.push(m);
             var float:TextComponent = new TextComponent();
-            float.setSize(new Rectangle(data.gapx, data.gapy, data.bounds.width, data.bounds.height));
+            float.setSize(new Rectangle(data.bounds.x, data.bounds.y, data.bounds.width, data.bounds.height));
             var s:String = TransSingleton.getInstance().translate(LangUtils.getText(m));
             float.setText(s, Languages.getRightToLeft(LangModelSingleton.getInstance().getLang()), Languages.getFontName(LangModelSingleton.getInstance().getLang()));
             var vis:Boolean = LangModelSingleton.getInstance().getDisplay();

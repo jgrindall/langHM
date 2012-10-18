@@ -4,7 +4,6 @@
     import com.heymath.jsfl.components.*;
     import com.heymath.jsfl.events.*;
     import com.heymath.jsfl.float.*;
-    
     import com.heymath.jsfl.model.*;
     import com.heymath.jsfl.trans.*;
     import com.heymath.jsfl.utils.*;
@@ -73,14 +72,11 @@
         private function decorate(data:Object) : void
         {
             var m:MovieClip = data.movieclip;
-            var bounds:Rectangle = m.getBounds(this._container);
+            data.bounds = m.getBounds(this._container);
             var g:Graphics = m.graphics;
             m.graphics.lineStyle(0, 0, 0);
-            g.beginFill(255, 0);
-            data.gapx = Math.max(0, (data.w - m.width) / 2);
-            data.gapy = Math.max(0, (data.h - m.height) / 2);
-            g.drawRect(data.gapx, data.gapy, m.width, m.height);
-            g.endFill();
+            g.beginFill(0xFF0000, 0.1);
+            g.drawRect(data.bounds.x, data.bounds.y, data.bounds.width, data.bounds.height);
             this._float.register(m, data);
             return;
         }
